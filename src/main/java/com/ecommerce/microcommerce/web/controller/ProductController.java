@@ -45,7 +45,11 @@ public class ProductController {
     //
     }
     
-
+    @RequestMapping(value = "/Produits/trier", method = RequestMethod.GET)
+    public MappingJacksonValue trierProduitsParOrdreAlphabetique ()  {
+    	MappingJacksonValue listProduits = new MappingJacksonValue(productDao.findByOrderByNomAsc());
+    	return listProduits;
+    }
 
     //Récupérer la liste des produits
     @RequestMapping(value = "/Produits", method = RequestMethod.GET)
