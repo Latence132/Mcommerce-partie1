@@ -2,16 +2,17 @@ package com.ecommerce.microcommerce.web.controller;
 
 import com.ecommerce.microcommerce.dao.ProductDao;
 import com.ecommerce.microcommerce.model.Product;
+import com.ecommerce.microcommerce.web.exceptions.ProduitGratuitException;
 import com.ecommerce.microcommerce.web.exceptions.ProduitIntrouvableException;
+import com.ecommerce.microcommerce.web.exceptions.ProduitListIntrouvableException;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.jackson.JsonObjectSerializer;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -31,41 +32,59 @@ public class ProductController {
     
   //Récupérer la liste des produits
     @RequestMapping(value = "/AdminProduits", method = RequestMethod.GET)
-    public MappingJacksonValue calculerMargeProduit() {
-    	Iterable<Product> produits = productDao.findAll();
+    public ResponseEntity<DataResponse> calculerMargeProduit() {
+    	List<Product> listProduits = productDao.findAll();
+    	List<Object> listProduitMarge = new ArrayList<Object>(listProduits.size()) ;
     
-    	List<String> listProduits = new ArrayList<String>();
-    	
-    	produits.forEach((product) ->{ 
-    			listProduits.add( product.toString() + ": " +Integer.toString(product.getPrix() - product.getPrixAchat()));
-    		});
-    	
-    	MappingJacksonValue produitsFiltres = new MappingJacksonValue(listProduits);
-        return produitsFiltres ;
+    	if(listProduits != null) {
+	    	DataResponse response = new DataResponse(); 	
+	    	listProduits.forEach((product) ->{ 
+	    		listProduitMarge.add( product.toString() + ": " +Integer.toString(product.getPrix() - product.getPrixAchat()));
+	    		});
+	    	response.setSuccess(true);
+	        response.setCount(listProduits.size());
+	        response.setProducts(listProduitMarge);
+	        return new ResponseEntity<>(response,HttpStatus.OK);
+	    
+    	}
+        throw new ProduitListIntrouvableException("Produits introuvable");
     //
     }
     
     @RequestMapping(value = "/Produits/trier", method = RequestMethod.GET)
-    public MappingJacksonValue trierProduitsParOrdreAlphabetique ()  {
-    	MappingJacksonValue listProduits = new MappingJacksonValue(productDao.findByOrderByNomAsc());
-    	return listProduits;
+    public ResponseEntity<DataResponse> trierProduitsParOrdreAlphabetique ()  {
+    	   	
+    	List<Product> results =  productDao.findByOrderByNomAsc();
+    	if(results != null) {
+	        DataResponse response = new DataResponse();
+	        
+	        response.setSuccess(true);
+	        response.setCount(results.size());
+	        response.setProducts(results);
+	        return new ResponseEntity<>(response,HttpStatus.OK);
+    	}
+    	throw new ProduitListIntrouvableException("Produits introuvable");
     }
 
-    //Récupérer la liste des produits
+    //Récupérer la liste des produitsZ
     @RequestMapping(value = "/Produits", method = RequestMethod.GET)
-    public MappingJacksonValue listeProduits() {
+    public ResponseEntity<DataResponse> listeProduits() {
 
-        Iterable<Product> produits = productDao.findAll();
+        List<Product> produits = productDao.findAll();
 
-        SimpleBeanPropertyFilter monFiltre = SimpleBeanPropertyFilter.serializeAllExcept("prixAchat");
-
-        FilterProvider listDeNosFiltres = new SimpleFilterProvider().addFilter("monFiltreDynamique", monFiltre);
-
-        MappingJacksonValue produitsFiltres = new MappingJacksonValue(produits);
-
-        produitsFiltres.setFilters(listDeNosFiltres);
-
-        return produitsFiltres;
+//        SimpleBeanPropertyFilter monFiltre = SimpleBeanPropertyFilter.serializeAllExcept("prixAchat");
+//        FilterProvider listDeNosFiltres = new SimpleFilterProvider().addFilter("monFiltreDynamique", monFiltre);
+//        MappingJacksonValue produitsFiltres = new MappingJacksonValue(produits);
+//        produitsFiltres.setFilters(listDeNosFiltres);
+        
+        if(produits != null) {
+        	 DataResponse response = new DataResponse();
+ 	        response.setSuccess(true);
+ 	        response.setCount(produits.size());
+ 	        response.setProducts(produits);
+ 	        return new ResponseEntity<>(response,HttpStatus.OK);
+        }
+        throw new ProduitListIntrouvableException("Produits introuvable");
     }
 
 
@@ -86,12 +105,16 @@ public class ProductController {
 
     //ajouter un produit
     @PostMapping(value = "/Produits")
-    public ResponseEntity<Void> ajouterProduit(@Valid @RequestBody Product product) {
+    public ResponseEntity<Void> ajouterProduit(@Valid @RequestBody Product product) throws Exception {
 
-        Product productAdded =  productDao.save(product);
+    	if(product.getPrix() <= 0) throw new ProduitGratuitException("Le produit avec l'id " + product.getId() + " à un prix d'achat non valide. Il doit être positif.");
+        
+    	Product productAdded =  productDao.save(product);
 
-        if (productAdded == null)
-            return ResponseEntity.noContent().build();
+        if (productAdded == null) {
+        	throw new Exception("Le produit avec l'id " + product.getId() + " n'à pas pu être enregistré.");
+            //return ResponseEntity.noContent().build();
+        }
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
