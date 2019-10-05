@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.jackson.JsonObjectSerializer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -26,12 +28,27 @@ public class ProductController {
 
     @Autowired
     private ProductDao productDao;
+    
+  //Récupérer la liste des produits
+    @RequestMapping(value = "/AdminProduits", method = RequestMethod.GET)
+    public MappingJacksonValue calculerMargeProduit() {
+    	Iterable<Product> produits = productDao.findAll();
+    
+    	List<String> listProduits = new ArrayList<String>();
+    	
+    	produits.forEach((product) ->{ 
+    			listProduits.add( product.toString() + ": " +Integer.toString(product.getPrix() - product.getPrixAchat()));
+    		});
+    	
+    	MappingJacksonValue produitsFiltres = new MappingJacksonValue(listProduits);
+        return produitsFiltres ;
+    //
+    }
+    
 
 
     //Récupérer la liste des produits
-
     @RequestMapping(value = "/Produits", method = RequestMethod.GET)
-
     public MappingJacksonValue listeProduits() {
 
         Iterable<Product> produits = productDao.findAll();
@@ -51,7 +68,6 @@ public class ProductController {
     //Récupérer un produit par son Id
     @ApiOperation(value = "Récupère un produit grâce à son ID à condition que celui-ci soit en stock!")
     @GetMapping(value = "/Produits/{id}")
-
     public Product afficherUnProduit(@PathVariable int id) {
 
         Product produit = productDao.findById(id);
@@ -66,7 +82,6 @@ public class ProductController {
 
     //ajouter un produit
     @PostMapping(value = "/Produits")
-
     public ResponseEntity<Void> ajouterProduit(@Valid @RequestBody Product product) {
 
         Product productAdded =  productDao.save(product);
