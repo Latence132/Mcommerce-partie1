@@ -43,7 +43,7 @@ public class ProductController {
 	    		});
 	    	response.setSuccess(true);
 	        response.setCount(listProduits.size());
-	        response.setProducts(listProduitMarge);
+	        response.setData(listProduitMarge);
 	        return new ResponseEntity<>(response,HttpStatus.OK);
 	    
     	}
@@ -60,7 +60,7 @@ public class ProductController {
 	        
 	        response.setSuccess(true);
 	        response.setCount(results.size());
-	        response.setProducts(results);
+	        response.setData(results);
 	        return new ResponseEntity<>(response,HttpStatus.OK);
     	}
     	throw new ProduitListIntrouvableException("Produits introuvable");
@@ -81,7 +81,7 @@ public class ProductController {
         	 DataResponse response = new DataResponse();
  	        response.setSuccess(true);
  	        response.setCount(produits.size());
- 	        response.setProducts(produits);
+ 	        response.setData(produits);
  	        return new ResponseEntity<>(response,HttpStatus.OK);
         }
         throw new ProduitListIntrouvableException("Produits introuvable");

@@ -26,11 +26,11 @@ public class DataResponse {
     	return this.count;
     }
     
-    public void setProducts(List<?> data) {
+    public void setData(List<?> data) {
     	this.data = data;
     }
     
-    public List<?> getProduct() {
+    public List<?> getData() {
     	return this.data;
     }
 
